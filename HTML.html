@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Giepsy Peligro - Professional Virtual Assistant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Three.js and GSAP for advanced animations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/ScrollTrigger.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0A0A14; color: #e2e8f0; scroll-behavior: smooth; overflow-x: hidden; perspective: 1500px; }
+        .section-title-underline { background-image: linear-gradient(to right, #2dd4bf, #8b5cf6, #ec4899); }
+        .card-bg-gradient { background: rgba(28, 25, 45, 0.5); backdrop-filter: blur(12px); border: 1px solid rgba(139, 92, 246, 0.15); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); }
+        .card-tilt { transition: transform 0.4s ease, box-shadow 0.4s ease; will-change: transform; }
+        .card-tilt:hover { box-shadow: 0 15px 40px rgba(139, 92, 246, 0.25); border-color: rgba(139, 92, 246, 0.4); }
+        @keyframes glowing-border { 0% { box-shadow: 0 0 8px #a78bfa, 0 0 16px #8b5cf6; } 50% { box-shadow: 0 0 16px #8b5cf6, 0 0 32px #6d28d9; } 100% { box-shadow: 0 0 8px #a78bfa, 0 0 16px #8b5cf6; } }
+        .profile-border-glow { animation: glowing-border 4s infinite alternate; border-radius: 50%; }
+        .btn-gradient { background-image: linear-gradient(to right, #6d28d9 0%, #ec4899 51%, #6d28d9 100%); background-size: 200% auto; transition: all 0.4s ease; }
+        .btn-gradient:hover { background-position: right center; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(236, 72, 153, 0.4); }
+        .section-content { opacity: 0; transform: translateY(40px); transition: opacity 0.8s ease-out, transform 0.8s ease-out; }
+        .section-content.is-visible { opacity: 1; transform: translateY(0); }
+        details[open] summary i { transform: rotate(180deg); }
+        details summary i { transition: transform 0.3s ease; }
+        ::-webkit-scrollbar { width: 8px; background-color: #111827; }
+        ::-webkit-scrollbar-thumb { background-color: #8b5cf6; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background-color: #a78bfa; }
+        #immersive-3d-background { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
+        #floating-contact-btn { position: fixed; bottom: 2rem; right: 2rem; z-index: 999; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px rgba(139, 92, 246, 0.6); animation: glowing-border 3s infinite alternate; cursor: pointer; }
+        #contact-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(12, 10, 24, 0.7); backdrop-filter: blur(8px); z-index: 1000; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s ease; pointer-events: none; }
+        #contact-modal-overlay.is-visible { opacity: 1; pointer-events: auto; }
+        #contact-modal { transform: scale(0.95); transition: transform 0.3s ease; }
+        #contact-modal-overlay.is-visible #contact-modal { transform: scale(1); }
+        #modal-close-btn { position: absolute; top: 1rem; right: 1.5rem; font-size: 2.5rem; color: #9ca3af; cursor: pointer; transition: color 0.2s, transform 0.2s; }
+        #modal-close-btn:hover { color: #fff; transform: rotate(90deg); }
+        .letter { display: inline-block; opacity: 0; transform: translateY(20px); }
+    </style>
+</head>
+<body class="leading-relaxed">
+    <canvas id="immersive-3d-background"></canvas>
+
+    <div id="floating-contact-btn" class="btn-gradient text-white" title="Get in Touch"><i class="fas fa-envelope text-2xl"></i></div>
+    
+    <div id="contact-modal-overlay">
+        <div id="contact-modal" class="card-bg-gradient rounded-2xl w-full max-w-lg p-8 relative">
+            <span id="modal-close-btn">×</span>
+            <h3 class="text-3xl font-semibold text-white mb-6">Send Me a Message</h3>
+            <form name="contact" method="POST" data-netlify="true" netlify-honeypot="bot-field" class="space-y-6">
+                <input type="hidden" name="form-name" value="contact"><p class="hidden"><label>Don’t fill this out if you’re human: <input name="bot-field"></label></p>
+                <div><label for="name" class="block text-gray-300 text-lg font-medium mb-2">Your name</label><input type="text" id="name" name="name" class="w-full px-4 py-3 rounded-lg bg-gray-800 text-white border border-gray-700 focus:border-purple-500 focus:outline-none" placeholder="Your Name" required></div>
+                <div><label for="email" class="block text-gray-300 text-lg font-medium mb-2">Your email</label><input type="email" id="email" name="email" class="w-full px-4 py-3 rounded-lg bg-gray-800 text-white border border-gray-700 focus:border-purple-500 focus:outline-none" placeholder="Your Email" required></div>
+                <div><label for="message" class="block text-gray-300 text-lg font-medium mb-2">Message</label><textarea id="message" name="message" rows="5" class="w-full px-4 py-3 rounded-lg bg-gray-800 text-white border border-gray-700 focus:border-purple-500 focus:outline-none resize-y" placeholder="Tell me about your project or requirements" required></textarea></div>
+                <button type="submit" class="btn-gradient w-full px-8 py-3 rounded-full text-lg font-semibold shadow-lg hover:shadow-xl transition">Send Message</button>
+                <div id="form-message" class="mt-4 text-center text-lg"></div>
+            </form>
+        </div>
+    </div>
+
+    <header class="bg-gray-900 bg-opacity-30 backdrop-filter backdrop-blur-lg fixed w-full z-50 shadow-lg py-4">
+        <nav class="container mx-auto px-6 flex justify-between items-center">
+            <div class="text-2xl font-black text-white tracking-widest">GIEPSY</div>
+            <ul class="hidden md:flex space-x-8 text-lg">
+                <li><a href="#home" class="text-gray-300 hover:text-purple-400 transition">Home</a></li>
+                <li><a href="#about" class="text-gray-300 hover:text-purple-400 transition">About</a></li>
+                <li><a href="#skills" class="text-gray-300 hover:text-purple-400 transition">Skills</a></li>
+                <li><a href="#services" class="text-gray-300 hover:text-purple-400 transition">Services</a></li>
+                <li><a href="#experience" class="text-gray-300 hover:text-purple-400 transition">Experience</a></li>
+                <li><a href="#contact" class="text-gray-300 hover:text-purple-400 transition">Contact</a></li>
+            </ul>
+            <div class="md:hidden"><button id="mobile-menu-button" class="text-white focus:outline-none"><i class="fas fa-bars text-2xl"></i></button></div>
+        </nav>
+        <div id="mobile-menu" class="hidden md:hidden bg-gray-900 bg-opacity-90 py-4">
+            <ul class="flex flex-col items-center space-y-4 text-lg">
+                <li><a href="#home" class="mobile-nav-link text-gray-300 hover:text-purple-400 transition">Home</a></li>
+                <li><a href="#about" class="mobile-nav-link text-gray-300 hover:text-purple-400 transition">About</a></li>
+                <li><a href="#skills" class="mobile-nav-link text-gray-300 hover:text-purple-400 transition">Skills</a></li>
+                <li><a href="#services" class="mobile-nav-link text-gray-300 hover:text-purple-400 transition">Services</a></li>
+                <li><a href="#experience" class="mobile-nav-link text-gray-300 hover:text-purple-400 transition">Experience</a></li>
+                <li><a href="#contact" class="mobile-nav-link text-gray-300 hover:text-purple-400 transition">Contact</a></li>
+            </ul>
+        </div>
+    </header>
+
+    <main class="relative z-10">
+        <section id="home" class="h-screen flex items-center justify-center">
+            <div class="section-content text-center">
+                <div class="relative w-64 h-64 md:w-80 md:h-80 mx-auto mb-8 flex items-center justify-center p-2 profile-border-glow rounded-full">
+                    <img src="https://i.pinimg.com/736x/9a/3f/09/9a3f09ab2cea38cafdd806a13f38c88d.jpg" alt="Giepsy Peligro" class="rounded-full w-full h-full object-cover">
+                </div>
+                <h1 class="text-6xl md:text-8xl font-black leading-tight text-white mb-4 tracking-tighter">Hi, I'm <span class="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-500">Giepsy</span></h1>
+                <h2 class="text-4xl md:text-5xl font-bold text-teal-300 mb-6 tracking-tight">Professional Virtual Assistant</h2>
+                <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 justify-center">
+                    <button class="open-modal-btn btn-gradient text-white px-8 py-3 rounded-full text-lg font-semibold shadow-lg">Get In Touch</button>
+                    <a href="#about" class="text-white border-2 border-purple-400 px-8 py-3 rounded-full text-lg font-semibold hover:bg-purple-400 hover:text-white transition">Explore My Work</a>
+                </div>
+            </div>
+        </section>
+
+        <section id="about" class="h-screen flex items-center justify-center">
+             <div class="section-content container mx-auto px-6">
+                <h2 class="text-5xl font-extrabold text-center text-white mb-12 relative pb-4 tracking-tighter">About Me<span class="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-24 h-1 section-title-underline rounded-full"></span></h2>
+                <div class="flex flex-col lg:flex-row items-center lg:space-x-12">
+                    <div class="lg:w-1/2 mb-12 lg:mb-0">
+                        <h3 class="text-3xl font-semibold text-white mb-6">Who I Am</h3>
+                        <p class="text-gray-300 text-lg mb-4">I'm a dedicated and versatile Virtual Assistant with extensive experience across multiple niches. My mission is to help entrepreneurs streamline operations, enhance their online presence, and focus on growth.</p>
+                        <p class="text-gray-300 text-lg">I build long-term relationships through reliability, attention to detail, and a proactive approach to problem-solving.</p>
+                    </div>
+                    <div class="lg:w-1/2 grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="card-tilt card-bg-gradient p-8 rounded-2xl flex flex-col items-center text-center"><i class="fas fa-rocket text-5xl text-purple-400 mb-4"></i><h4 class="text-2xl font-semibold text-white mb-2">Efficiency</h4><p class="text-gray-300">Saving you time and resources</p></div>
+                        <div class="card-tilt card-bg-gradient p-8 rounded-2xl flex flex-col items-center text-center"><i class="fas fa-lightbulb text-5xl text-pink-500 mb-4"></i><h4 class="text-2xl font-semibold text-white mb-2">Creativity</h4><p class="text-gray-300">Innovative, fresh solutions</p></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="skills" class="h-screen flex items-center justify-center">
+             <div class="section-content container mx-auto px-6">
+                <h2 class="text-5xl font-extrabold text-center text-white mb-12 relative pb-4 tracking-tighter">My Skills<span class="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-24 h-1 section-title-underline rounded-full"></span></h2>
+                <div class="space-y-6 max-w-4xl mx-auto">
+                    <details class="card-bg-gradient rounded-2xl shadow-lg overflow-hidden"><summary class="flex items-center justify-between p-6 cursor-pointer text-white text-2xl font-semibold">Administrative & General VA<i class="fas fa-chevron-down"></i></summary><div class="p-6 text-gray-300 text-lg grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"><p><i class="fas fa-check-circle text-teal-400 mr-2"></i>Email Management</p><p><i class="fas fa-check-circle text-teal-400 mr-2"></i>Calendar Management</p><p><i class="fas fa-check-circle text-teal-400 mr-2"></i>Data Entry</p><p><i class="fas fa-check-circle text-teal-400 mr-2"></i>File Organization</p><p><i class="fas fa-check-circle text-teal-400 mr-2"></i>Online Research</p><p><i class="fas fa-check-circle text-teal-400 mr-2"></i>Customer Support</p></div></details>
+                    <details class="card-bg-gradient rounded-2xl shadow-lg overflow-hidden"><summary class="flex items-center justify-between p-6 cursor-pointer text-white text-2xl font-semibold">Creative & Social Media VA<i class="fas fa-chevron-down"></i></summary><div class="p-6 text-gray-300 text-lg grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"><p><i class="fas fa-check-circle text-teal-400 mr-2"></i>Social Media Management</p><p><i class="fas fa-check-circle text-teal-400 mr-2"></i>Content Creation</p><p><i class="fas fa-check-circle text-teal-400 mr-2"></i>Canva Design</p><p><i class="fas fa-check-circle text-teal-400 mr-2"></i>Video & Podcast Editing</p></div></details>
+                    <details class="card-bg-gradient rounded-2xl shadow-lg overflow-hidden"><summary class="flex items-center justify-between p-6 cursor-pointer text-white text-2xl font-semibold">E-commerce VA<i class="fas fa-chevron-down"></i></summary><div class="p-6 text-gray-300 text-lg grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"><p><i class="fas fa-check-circle text-teal-400 mr-2"></i>Shopify Management</p><p><i class="fas fa-check-circle text-teal-400 mr-2"></i>Product Listings</p><p><i class="fas fa-check-circle text-teal-400 mr-2"></i>Order Processing</p><p><i class="fas fa-check-circle text-teal-400 mr-2"></i>E-commerce Support</p></div></details>
+                </div>
+            </div>
+        </section>
+
+        <!-- Services Section - COMPLETE -->
+        <section id="services" class="h-screen flex items-center justify-center">
+            <div class="section-content container mx-auto px-6">
+                <h2 class="text-5xl font-extrabold text-center text-white mb-12 relative pb-4 tracking-tighter">Services<span class="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-24 h-1 section-title-underline rounded-full"></span></h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+                    <div class="card-tilt card-bg-gradient p-8 rounded-2xl flex flex-col justify-between"><div><div class="text-5xl text-purple-400 mb-4 text-center"><i class="fas fa-briefcase"></i></div><h3 class="text-2xl font-semibold text-white mb-4 text-center">Administrative Support</h3><p class="text-gray-300 text-center text-sm">Comprehensive admin assistance to keep your business running smoothly.</p></div><div class="mt-6 text-center"><button class="open-modal-btn btn-gradient text-white px-6 py-2 rounded-full font-semibold">Inquire</button></div></div>
+                    <div class="card-tilt card-bg-gradient p-8 rounded-2xl flex flex-col justify-between"><div><div class="text-5xl text-pink-500 mb-4 text-center"><i class="fas fa-share-alt"></i></div><h3 class="text-2xl font-semibold text-white mb-4 text-center">Social Media Management</h3><p class="text-gray-300 text-center text-sm">Full social media support to grow your online presence and engage your audience.</p></div><div class="mt-6 text-center"><button class="open-modal-btn btn-gradient text-white px-6 py-2 rounded-full font-semibold">Inquire</button></div></div>
+                    <div class="card-tilt card-bg-gradient p-8 rounded-2xl flex flex-col justify-between"><div><div class="text-5xl text-teal-400 mb-4 text-center"><i class="fas fa-laptop-code"></i></div><h3 class="text-2xl font-semibold text-white mb-4 text-center">Tech & Systems Support</h3><p class="text-gray-300 text-center text-sm">Technical assistance to optimize your digital systems and automate processes.</p></div><div class="mt-6 text-center"><button class="open-modal-btn btn-gradient text-white px-6 py-2 rounded-full font-semibold">Inquire</button></div></div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Experience Section - COMPLETE -->
+        <section id="experience" class="h-screen flex items-center justify-center">
+             <div class="section-content container mx-auto px-6">
+                <h2 class="text-5xl font-extrabold text-center text-white mb-12 relative pb-4 tracking-tighter">Work Experience<span class="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-24 h-1 section-title-underline rounded-full"></span></h2>
+                <div class="space-y-8 max-w-4xl mx-auto">
+                    <div class="card-tilt card-bg-gradient p-8 rounded-2xl"><div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4"><h3 class="text-3xl font-semibold text-white">Executive Virtual Assistant</h3><span class="text-purple-400 text-lg font-medium mt-2 md:mt-0">2021 - Present</span></div><p class="text-gray-300 text-lg mb-4">Comprehensive support for a digital entrepreneur, managing admin, email, social media, and course launches.</p></div>
+                    <div class="card-tilt card-bg-gradient p-8 rounded-2xl"><div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4"><h3 class="text-3xl font-semibold text-white">Online Retail Business</h3><span class="text-purple-400 text-lg font-medium mt-2 md:mt-0">2019 - 2021</span></div><p class="text-gray-300 text-lg mb-4">Managed listings, customer service, and inventory for an e-commerce business on Shopify & Amazon.</p></div>
+                    <div class="card-tilt card-bg-gradient p-8 rounded-2xl"><div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4"><h3 class="text-3xl font-semibold text-white">Social Media Manager</h3><span class="text-purple-400 text-lg font-medium mt-2 md:mt-0">2017 - 2019</span></div><p class="text-gray-300 text-lg mb-4">Created and managed social content, calendars, and graphics for multiple B2B and B2C clients.</p></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Testimonials Section - COMPLETE -->
+        <section id="testimonials" class="h-screen flex items-center justify-center">
+            <div class="section-content container mx-auto px-6">
+                <h2 class="text-5xl font-extrabold text-center text-white mb-12 relative pb-4 tracking-tighter">Client Testimonials<span class="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-24 h-1 section-title-underline rounded-full"></span></h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div class="card-tilt card-bg-gradient p-8 rounded-2xl"><div class="flex justify-center mb-4"><i class="fas fa-star text-yellow-400 text-xl mx-1"></i><i class="fas fa-star text-yellow-400 text-xl mx-1"></i><i class="fas fa-star text-yellow-400 text-xl mx-1"></i><i class="fas fa-star text-yellow-400 text-xl mx-1"></i><i class="fas fa-star text-yellow-400 text-xl mx-1"></i></div><p class="text-gray-300 text-lg mb-6 italic">"Giepsy has been an absolute game-changer for my business. Her attention to detail and ability to manage multiple tasks efficiently has freed up so much of my time."</p><div class="flex items-center"><div class="w-12 h-12 bg-purple-400 rounded-full flex items-center justify-center text-white text-xl font-bold mr-4">JD</div><div><p class="text-white font-semibold text-lg">Jessica Davis</p><p class="text-gray-400 text-sm">Digital Entrepreneur</p></div></div></div>
+                    <div class="card-tilt card-bg-gradient p-8 rounded-2xl"><div class="flex justify-center mb-4"><i class="fas fa-star text-yellow-400 text-xl mx-1"></i><i class="fas fa-star text-yellow-400 text-xl mx-1"></i><i class="fas fa-star text-yellow-400 text-xl mx-1"></i><i class="fas fa-star text-yellow-400 text-xl mx-1"></i><i class="fas fa-star text-yellow-400 text-xl mx-1"></i></div><p class="text-gray-300 text-lg mb-6 italic">"Working with Giepsy has been fantastic. She quickly learned our systems and has improved our customer service response times dramatically. A true professional!"</p><div class="flex items-center"><div class="w-12 h-12 bg-pink-500 rounded-full flex items-center justify-center text-white text-xl font-bold mr-4">MT</div><div><p class="text-white font-semibold text-lg">Michael Thompson</p><p class="text-gray-400 text-sm">E-commerce Store Owner</p></div></div></div>
+                    <div class="card-tilt card-bg-gradient p-8 rounded-2xl"><div class="flex justify-center mb-4"><i class="fas fa-star text-yellow-400 text-xl mx-1"></i><i class="fas fa-star text-yellow-400 text-xl mx-1"></i><i class="fas fa-star text-yellow-400 text-xl mx-1"></i><i class="fas fa-star text-yellow-400 text-xl mx-1"></i><i class="fas fa-star-half-alt text-yellow-400 text-xl mx-1"></i></div><p class="text-gray-300 text-lg mb-6 italic">"Giepsy's social media management has transformed our online presence. Her creative content and consistent posting have significantly increased our engagement."</p><div class="flex items-center"><div class="w-12 h-12 bg-blue-400 rounded-full flex items-center justify-center text-white text-xl font-bold mr-4">SL</div><div><p class="text-white font-semibold text-lg">Sarah Lee</p><p class="text-gray-400 text-sm">Small Business Owner</p></div></div></div>
+                </div>
+            </div>
+        </section>
+        
+        <section id="contact" class="h-screen flex items-center justify-center">
+            <div class="section-content container mx-auto px-6">
+                <h2 class="text-5xl font-extrabold text-center text-white mb-12 relative pb-4 tracking-tighter">Contact Me<span class="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-24 h-1 section-title-underline rounded-full"></span></h2>
+                <div class="card-bg-gradient p-8 rounded-2xl max-w-4xl mx-auto">
+                    <div class="text-center mb-10">
+                        <p class="text-xl text-gray-300 mb-6">Have a project in mind or want to connect? Reach out via email or find me on your favorite platform.</p>
+                        <button class="open-modal-btn btn-gradient text-white px-10 py-4 rounded-full text-xl font-semibold shadow-lg">Send a Direct Message</button>
+                    </div>
+                    <h3 class="text-3xl font-semibold text-white text-center mt-12 mb-6">Connect With Me</h3>
+                    <div class="flex flex-wrap gap-x-6 gap-y-4 justify-center text-3xl">
+                        <a href="mailto:giepsy27@gmail.com" title="Email" class="text-gray-300 hover:text-purple-400 transition"><i class="fas fa-envelope"></i></a>
+                        <a href="https://www.linkedin.com/in/giepsy-peligro-17b208226" target="_blank" rel="noopener noreferrer" title="LinkedIn" class="text-gray-300 hover:text-blue-500 transition"><i class="fab fa-linkedin"></i></a>
+                        <a href="https://www.upwork.com/ab/identity-verification/" target="_blank" rel="noopener noreferrer" title="Upwork" class="text-gray-300 hover:text-green-600 transition"><i class="fa-brands fa-upwork"></i></a>
+                        <a href="https://www.fiverr.com/pe/gDwKdga" target="_blank" rel="noopener noreferrer" title="Fiverr" class="text-gray-300 hover:text-green-400 transition"><i class="fa-brands fa-fiverr"></i></a>
+                        <a href="https://www.instagram.com/giepsypeligro?igsh=MW5lbWl3dXRwcnFrbA==" target="_blank" rel="noopener noreferrer" title="Instagram" class="text-gray-300 hover:text-pink-500 transition"><i class="fab fa-instagram"></i></a>
+                        <a href="https://www.facebook.com/share/16GSYxycX5/" target="_blank" rel="noopener noreferrer" title="Facebook" class="text-gray-300 hover:text-blue-600 transition"><i class="fab fa-facebook"></i></a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-transparent py-10 relative z-10">
+        <div class="container mx-auto px-6 text-center text-gray-500">
+            <p>© <span id="current-year"></span> Giepsy Peligro. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // --- UI Logic: Menu, Modal, Accordion ---
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href');
+                const targetElement = document.querySelector(targetId);
+                if (targetElement) {
+                    // Use GSAP for smooth scroll to the section's start marker
+                    gsap.to(window, { duration: 1.5, scrollTo: { y: targetId, autoKill: false }, ease: "power2.inOut" });
+                }
+                document.getElementById('mobile-menu').classList.add('hidden');
+            });
+        });
+        document.getElementById('mobile-menu-button').addEventListener('click', () => document.getElementById('mobile-menu').classList.toggle('hidden'));
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+        document.querySelectorAll('details').forEach(d => d.addEventListener('toggle', () => d.querySelector('summary i').classList.toggle('rotate-180', d.open)));
+        const modalOverlay = document.getElementById('contact-modal-overlay');
+        const openModal = () => modalOverlay.classList.add('is-visible');
+        const closeModal = () => modalOverlay.classList.remove('is-visible');
+        document.querySelectorAll('.open-modal-btn, #floating-contact-btn').forEach(b => b.addEventListener('click', openModal));
+        document.getElementById('modal-close-btn').addEventListener('click', closeModal);
+        modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) closeModal(); });
+
+        // --- Netlify Form Submission ---
+        const contactForm = document.querySelector('form[name="contact"]');
+        contactForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const msgDiv = document.getElementById('form-message');
+            fetch('/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams(new FormData(contactForm)).toString(),
+            })
+            .then(() => {
+                msgDiv.textContent = 'Thank you! Your message has been sent.';
+                msgDiv.style.color = 'rgb(52, 211, 153)';
+                contactForm.reset();
+                setTimeout(closeModal, 2500);
+            })
+            .catch(() => {
+                msgDiv.textContent = 'Oops! Something went wrong.';
+                msgDiv.style.color = 'rgb(248, 113, 113)';
+            });
+        });
+
+        // --- Card Tilt Effect ---
+        document.querySelectorAll('.card-tilt').forEach(card => {
+            card.addEventListener('mousemove', e => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left - rect.width / 2;
+                const y = e.clientY - rect.top - rect.height / 2;
+                gsap.to(card, { duration: 0.4, rotationX: -y / 25, rotationY: x / 25, scale: 1.05, ease: "power2.out" });
+            });
+            card.addEventListener('mouseleave', () => gsap.to(card, { duration: 0.4, rotationX: 0, rotationY: 0, scale: 1, ease: "power2.out" }));
+        });
+
+        // --- 3D Scene & GSAP Scroll-Triggered Animations ---
+        gsap.registerPlugin(ScrollTrigger);
+        let scene, camera, renderer, crystal, particles, clock = new THREE.Clock();
+
+        function init3D() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.z = 15;
+            renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('immersive-3d-background'), alpha: true, antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+            // Lights
+            const pLight1 = new THREE.PointLight(0x9d5bff, 1.5, 300); pLight1.position.set(100, 50, 100); scene.add(pLight1);
+            const pLight2 = new THREE.PointLight(0x00d9e9, 1.5, 300); pLight2.position.set(-100, -50, -100); scene.add(pLight2);
+            scene.add(new THREE.AmbientLight(0xffffff, 0.1));
+
+            // Magical Crystal
+            const crystalGeom = new THREE.IcosahedronGeometry(2, 0);
+            const crystalMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.1, metalness: 0.8, transparent: true, opacity: 0.6, emissive: 0x3c1361, emissiveIntensity: 0.5 });
+            crystal = new THREE.Mesh(crystalGeom, crystalMat);
+            scene.add(crystal);
+
+            // Galactic Particle Nebula
+            const particleCount = 50000;
+            const positions = new Float32Array(particleCount * 3);
+            for (let i = 0; i < particleCount; i++) {
+                const i3 = i * 3;
+                const r = Math.random() * 200 + 5;
+                const theta = Math.random() * Math.PI * 2;
+                const y = (Math.random() - 0.5) * 50;
+                positions[i3] = r * Math.cos(theta);
+                positions[i3 + 1] = y;
+                positions[i3 + 2] = r * Math.sin(theta);
+            }
+            const particleGeom = new THREE.BufferGeometry();
+            particleGeom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            const particleMat = new THREE.PointsMaterial({ size: 0.1, color: 0x8b5cf6, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true });
+            particles = new THREE.Points(particleGeom, particleMat);
+            scene.add(particles);
+
+            setupScrollAnimations();
+        }
+
+        function setupScrollAnimations() {
+            const sections = gsap.utils.toArray('section');
+            sections.forEach((section, i) => {
+                const sectionContent = section.querySelector('.section-content');
+                if(sectionContent) {
+                    gsap.fromTo(sectionContent, {
+                        opacity: 0,
+                        y: 100
+                    }, {
+                        opacity: 1,
+                        y: 0,
+                        duration: 1,
+                        ease: "power2.out",
+                        scrollTrigger: {
+                            trigger: section,
+                            start: "top center",
+                            end: "center center",
+                            scrub: 1
+                        }
+                    });
+                }
+                // Animate section title letters
+                const letters = section.querySelectorAll('.letter');
+                if (letters.length > 0) {
+                    gsap.from(letters, {
+                        y: 20,
+                        opacity: 0,
+                        stagger: 0.05,
+                        duration: 0.5,
+                        ease: "power1.out",
+                        scrollTrigger: {
+                            trigger: section,
+                            start: "top 80%"
+                        }
+                    });
+                }
+            });
+
+            // Camera flight path timeline
+            const tl = gsap.timeline({
+                scrollTrigger: {
+                    trigger: "main",
+                    start: "top top",
+                    end: "bottom bottom",
+                    scrub: 1.5,
+                }
+            });
+
+            tl.to(camera.position, { z: 25 }, 0) // Pull back from hero
+              .to(camera.position, { x: -10, y: -5, z: 20 }, 1) // Move to About
+              .to(camera.rotation, { y: Math.PI * 0.1 }, 1)
+              .to(camera.position, { x: 10, y: -10, z: 25 }, 2) // Move to Skills
+              .to(camera.rotation, { x: -Math.PI * 0.1, y: -Math.PI * 0.05 }, 2)
+              .to(camera.position, { x: 0, y: 0, z: 20 }, 3) // Move to Services
+              .to(camera.rotation, { x: 0, y: 0 }, 3)
+              .to(camera.position, { x: -15, y: 5, z: 22 }, 4) // Move to Experience
+              .to(camera.rotation, { y: Math.PI * 0.2 }, 4)
+              .to(camera.position, { x: 15, y: -5, z: 22 }, 5) // Move to Testimonials
+              .to(camera.rotation, { y: -Math.PI * 0.2 }, 5)
+              .to(camera.position, { x: 0, y: 0, z: 15 }, 6) // Move to Contact
+              .to(camera.rotation, { x: 0, y: 0 }, 6);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const elapsedTime = clock.getElapsedTime();
+            if (crystal) crystal.rotation.y = elapsedTime * 0.2;
+            if (particles) particles.rotation.y = -elapsedTime * 0.05;
+            renderer.render(scene, camera);
+        }
+
+        window.onload = () => {
+            document.querySelectorAll('h2').forEach(h2 => {
+                h2.innerHTML = h2.textContent.replace(/(\S)/g, `<span class="letter">$1</span>`);
+            });
+            init3D();
+            animate();
+        };
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
